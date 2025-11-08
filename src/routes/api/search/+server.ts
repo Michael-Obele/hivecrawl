@@ -112,6 +112,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
 
 		// Perform search
 		const results = await searchDuckDuckGo(query, { limit, region });
+		console.log('Search results:', results);
 
 		return jsonResponse(successResponse(results));
 	} catch (error: any) {

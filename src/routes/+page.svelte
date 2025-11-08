@@ -91,6 +91,7 @@
 				`/api/search?q=${encodeURIComponent(searchQuery)}&limit=${searchLimit}`
 			);
 			const data = await response.json();
+			console.log('Search API response:', data);
 			searchResult = data;
 		} catch (error) {
 			searchResult = { error: error instanceof Error ? error.message : 'Unknown error' };
@@ -539,7 +540,7 @@
 										<p class="text-red-600 dark:text-red-400">Error: {searchResult.error}</p>
 									{:else}
 										<div class="space-y-4">
-											{#each searchResult.data || [] as result}
+											{#each searchResult.data?.results || [] as result}
 												<div class="rounded-lg border bg-white p-4 dark:bg-gray-800">
 													<h4
 														class="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
@@ -549,9 +550,9 @@
 														</a>
 													</h4>
 													<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-														{result.description}
+														{result.snippet}
 													</p>
-													<div class="mt-2 text-xs text-gray-500">{result.displayUrl}</div>
+													<div class="mt-2 text-xs text-gray-500">{result.url}</div>
 												</div>
 											{/each}
 										</div>
