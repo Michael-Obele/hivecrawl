@@ -69,6 +69,7 @@
 			});
 
 			const data = await response.json();
+			console.log('Crawl API response:', data);
 			crawlResult = data;
 		} catch (error) {
 			crawlResult = { error: error instanceof Error ? error.message : 'Unknown error' };
@@ -265,30 +266,32 @@
 										<div class="space-y-4">
 											<div>
 												<strong>Title:</strong>
-												{scrapeResult.title || 'No title'}
+												{scrapeResult.data?.title || 'No title'}
 											</div>
 											<div>
 												<strong>URL:</strong>
-												{scrapeResult.url}
+												{scrapeResult.data?.url}
 											</div>
 											{#if scrapeFormat === 'markdown'}
 												<div>
 													<strong>Content (Markdown):</strong>
 													<pre
-														class="mt-2 rounded border bg-white p-3 text-sm whitespace-pre-wrap dark:bg-gray-800">{scrapeResult.markdown}</pre>
+														class="mt-2 rounded border bg-white p-3 text-sm whitespace-pre-wrap dark:bg-gray-800">{scrapeResult
+															.data?.markdown}</pre>
 												</div>
 											{:else if scrapeFormat === 'html'}
 												<div>
 													<strong>Content (HTML):</strong>
 													<pre
-														class="mt-2 rounded border bg-white p-3 text-sm whitespace-pre-wrap dark:bg-gray-800">{scrapeResult.html}</pre>
+														class="mt-2 rounded border bg-white p-3 text-sm whitespace-pre-wrap dark:bg-gray-800">{scrapeResult
+															.data?.html}</pre>
 												</div>
 											{:else}
 												<div>
 													<strong>Content:</strong>
 													<pre
 														class="mt-2 rounded border bg-white p-3 text-sm whitespace-pre-wrap dark:bg-gray-800">{JSON.stringify(
-															scrapeResult.content,
+															scrapeResult.data?.content,
 															null,
 															2
 														)}</pre>
@@ -414,18 +417,18 @@
 										<div class="space-y-4">
 											<div>
 												<strong>Pages crawled:</strong>
-												{crawlResult.metadata?.totalPages || 0}
+												{crawlResult.data?.metadata?.totalPages || 0}
 											</div>
 											<div>
 												<strong>Total time:</strong>
-												{crawlResult.metadata?.totalTime
-													? `${(crawlResult.metadata.totalTime / 1000).toFixed(2)}s`
+												{crawlResult.data?.metadata?.totalTime
+													? `${(crawlResult.data.metadata.totalTime / 1000).toFixed(2)}s`
 													: 'N/A'}
 											</div>
 											<div>
 												<strong>Pages:</strong>
 												<div class="mt-2 max-h-64 space-y-2 overflow-y-auto">
-													{#each crawlResult.pages || [] as page}
+													{#each crawlResult.data?.pages || [] as page}
 														<div class="rounded border bg-white p-3 dark:bg-gray-800">
 															<div class="font-medium">{page.title || 'No title'}</div>
 															<div class="truncate text-sm text-gray-600 dark:text-gray-400">
@@ -536,7 +539,7 @@
 										<p class="text-red-600 dark:text-red-400">Error: {searchResult.error}</p>
 									{:else}
 										<div class="space-y-4">
-											{#each searchResult as result}
+											{#each searchResult.data || [] as result}
 												<div class="rounded-lg border bg-white p-4 dark:bg-gray-800">
 													<h4
 														class="font-semibold text-indigo-600 hover:underline dark:text-indigo-400"

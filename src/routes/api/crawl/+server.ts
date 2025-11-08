@@ -221,6 +221,10 @@ export const POST: RequestHandler = async ({ request }) => {
 					};
 				});
 
+				console.log(
+					`Extracted data for ${currentUrl}: title="${data.title}", content length=${data.content.length}`
+				);
+
 				// Add to results
 				results.push({
 					url: currentUrl,
@@ -229,6 +233,10 @@ export const POST: RequestHandler = async ({ request }) => {
 					markdown: htmlToMarkdown(data.html),
 					depth: req.userData?.depth || 0
 				});
+
+				console.log(
+					`Added result for ${currentUrl}, title: ${data.title}, results count now: ${results.length}`
+				);
 
 				// Enqueue more links if within limits
 				if ((req.userData?.depth || 0) < maxDepth) {
@@ -267,6 +275,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		await crawler.run([{ url, userData: { depth: 0 } }]);
 
 		const totalTime = Date.now() - startTime;
+
+		console.log(`Crawl completed. Results count: ${results.length}`);
+		console.log('Results:', results);
 
 		const responseData = {
 			pages: results,
