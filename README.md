@@ -369,6 +369,7 @@ MIT License - feel free to use this project for any purpose.
 ## 🙏 Acknowledgments
 
 - Built with [SvelteKit](https://kit.svelte.dev/)
+- API documentation generated with [sveltekit-openapi-generator](https://www.npmjs.com/package/sveltekit-openapi-generator)
 - Uses [Cheerio](https://cheerio.js.org/) for fast HTML parsing
 - Uses [Playwright](https://playwright.dev/) for JavaScript-rendered pages
 - Uses [Crawlee](https://crawlee.dev/) for intelligent crawling
