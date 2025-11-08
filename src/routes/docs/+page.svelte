@@ -3,6 +3,9 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { dev } from '$app/environment';
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { BookOpen, Sparkles, AlertCircle, CheckCircle } from '@lucide/svelte';
 	// spec may be provided by Vite via virtual:openapi-spec — we'll try to load it at runtime and
 	// fall back to fetching '/openapi-spec.json' when not available.
 	import 'swagger-ui-dist/swagger-ui.css';
@@ -82,35 +85,72 @@
 	/>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50 dark:bg-gray-950">
-	<div class="container mx-auto px-4 py-8">
-		<header
-			class="bg-linear-to-br from-indigo-600 via-purple-600 to-purple-700 px-4 py-8 text-center text-white shadow-lg dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900"
-		>
-			<h1 class="mb-2 text-4xl font-bold">API Documentation</h1>
-			<p class="text-lg opacity-90">Explore and test the API endpoints</p>
-		</header>
+<div
+	class="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
+>
+	<!-- Enhanced Header -->
+	<div class="border-b bg-background/95 shadow-sm backdrop-blur-sm">
+		<div class="container mx-auto px-4 py-8">
+			<div class="flex items-center justify-between">
+				<div>
+					<div
+						class="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm"
+					>
+						<Sparkles class="h-3 w-3 text-primary" />
+						<span class="font-medium text-primary">API Reference</span>
+					</div>
+					<h1 class="text-4xl font-bold">API Documentation</h1>
+					<p class="mt-2 text-base text-muted-foreground">
+						Interactive OpenAPI documentation for HiveCrawl's scraping, crawling, and search
+						endpoints
+					</p>
+				</div>
+				<Badge
+					variant="secondary"
+					class="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
+				>
+					<BookOpen class="mr-1 h-3 w-3" />
+					OpenAPI 3.0
+				</Badge>
+			</div>
+		</div>
+	</div>
 
-		<!-- Debug: Show if spec is loaded -->
+	<div class="container mx-auto px-4 py-8">
+		<!-- Debug Status Messages -->
 		{#if spec}
 			<div
-				class="m-4 rounded border-l-4 border-cyan-500 bg-cyan-50 p-4 dark:border-cyan-600 dark:bg-cyan-950"
+				class="mb-6 rounded-xl border-2 border-green-200 bg-green-50 p-4 dark:border-green-900/50 dark:bg-green-950/20"
 			>
-				<strong class="text-cyan-900 dark:text-cyan-100">Debug:</strong>
-				<span class="text-cyan-700 dark:text-cyan-300">
-					Spec loaded with {Object.keys(spec.paths || {}).length} paths
-				</span>
+				<div class="flex items-center gap-2">
+					<CheckCircle class="h-5 w-5 text-green-600 dark:text-green-400" />
+					<strong class="text-green-900 dark:text-green-100">Spec Loaded Successfully</strong>
+				</div>
+				<p class="mt-1 ml-7 text-sm text-green-700 dark:text-green-300">
+					Found {Object.keys(spec.paths || {}).length} API endpoint{Object.keys(spec.paths || {})
+						.length !== 1
+						? 's'
+						: ''}
+				</p>
 			</div>
 		{:else}
 			<div
-				class="m-4 rounded border-l-4 border-red-500 bg-red-50 p-4 dark:border-red-600 dark:bg-red-950"
+				class="mb-6 rounded-xl border-2 border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/20"
 			>
-				<strong class="text-red-900 dark:text-red-100">Error:</strong>
-				<span class="text-red-700 dark:text-red-300">No spec loaded</span>
+				<div class="flex items-center gap-2">
+					<AlertCircle class="h-5 w-5 text-red-600 dark:text-red-400" />
+					<strong class="text-red-900 dark:text-red-100">Loading Spec...</strong>
+				</div>
+				<p class="mt-1 ml-7 text-sm text-red-700 dark:text-red-300">
+					If this persists, check that the OpenAPI spec file is available
+				</p>
 			</div>
 		{/if}
 
-		<div id="swagger-ui-container" class="mx-auto max-w-7xl p-8" bind:this={containerElement}></div>
+		<!-- Swagger UI Container -->
+		<Card.Root class="overflow-hidden border-2 shadow-xl">
+			<div id="swagger-ui-container" class="min-h-[600px] p-8" bind:this={containerElement}></div>
+		</Card.Root>
 	</div>
 </div>
 
