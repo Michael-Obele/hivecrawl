@@ -1,6 +1,78 @@
 /**
  * Search API endpoint
  * GET /api/search?q={query}&limit={number}&region={code}
+ *
+ * @swagger
+ * /api/search:
+ *   get:
+ *     summary: Search the web using DuckDuckGo
+ *     description: Performs a web search using DuckDuckGo and returns relevant results
+ *     tags:
+ *       - Search
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search query
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Maximum number of results to return
+ *       - in: query
+ *         name: region
+ *         schema:
+ *           type: string
+ *           default: wt-wt
+ *         description: Search region code (e.g., us-en, uk-en)
+ *     responses:
+ *       200:
+ *         description: Successful search
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                   url:
+ *                     type: string
+ *                     format: uri
+ *                   description:
+ *                     type: string
+ *                   displayUrl:
+ *                     type: string
+ *       400:
+ *         description: Invalid request parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *                 details:
+ *                   type: object
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                 message:
+ *                   type: string
  */
 
 import type { RequestHandler } from './$types';

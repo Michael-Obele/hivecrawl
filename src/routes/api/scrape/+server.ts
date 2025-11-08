@@ -2,6 +2,110 @@
  * Scrape API endpoint
  * POST /api/scrape
  * Body: { url, format?, options? }
+ *
+ * @swagger
+ * /api/scrape:
+ *   post:
+ *     summary: Scrape content from a single URL
+ *     description: Extracts content from a single webpage with various formatting options
+ *     tags:
+ *       - Scraping
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - url
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 format: uri
+ *                 description: The URL to scrape
+ *               format:
+ *                 type: string
+ *                 enum: [markdown, html, json]
+ *                 default: markdown
+ *                 description: Output format for the content
+ *               options:
+ *                 type: object
+ *                 properties:
+ *                   timeout:
+ *                     type: integer
+ *                     default: 30000
+ *                     description: Request timeout in milliseconds
+ *                   waitFor:
+ *                     type: string
+ *                     description: CSS selector to wait for before scraping
+ *                   screenshot:
+ *                     type: boolean
+ *                     default: false
+ *                     description: Whether to include a screenshot
+ *                   fullPage:
+ *                     type: boolean
+ *                     default: true
+ *                     description: Whether to capture full page content
+ *                   forceMethod:
+ *                     type: string
+ *                     enum: [playwright, cheerio]
+ *                     description: Force a specific scraping method
+ *     responses:
+ *       200:
+ *         description: Successful scrape
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 url:
+ *                   type: string
+ *                   format: uri
+ *                 title:
+ *                   type: string
+ *                 content:
+ *                   type: string
+ *                 metadata:
+ *                   type: object
+ *                 links:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 images:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 markdown:
+ *                   type: string
+ *                 html:
+ *                   type: string
+ *                 screenshot:
+ *                   type: string
+ *                   description: Base64 encoded screenshot (if requested)
+ *       400:
+ *         description: Invalid request parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *                 details:
+ *                   type: object
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: string
+ *                 message:
+ *                   type: string
  */
 
 import type { RequestHandler } from './$types';
