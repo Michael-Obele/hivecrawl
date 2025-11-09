@@ -51,10 +51,18 @@ async function searchWithHtmlEndpoint(
 	// Build search URL
 	const searchUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(query)}&kl=${region}`;
 
-	// Try up to 3 times with different user agents
+	// Try up to 3 times with different user agents and delays
 	for (let attempt = 0; attempt < 3; attempt++) {
 		try {
 			const userAgent = getRandomUserAgent();
+			const delay = attempt * 2000; // 0ms, 2s, 4s delays
+
+			if (delay > 0) {
+				console.log(`Waiting ${delay}ms before retry ${attempt + 1}...`);
+				await new Promise((resolve) => setTimeout(resolve, delay));
+			}
+
+			console.log(`[DuckDuckGo HTML] Attempt ${attempt + 1}/3 for query: ${query}`);
 
 			const response = await axios.get(searchUrl, {
 				headers: {
@@ -63,11 +71,37 @@ async function searchWithHtmlEndpoint(
 					'Accept-Language': 'en-US,en;q=0.5',
 					'Accept-Encoding': 'gzip, deflate',
 					Connection: 'keep-alive',
-					'Upgrade-Insecure-Requests': '1'
+					'Upgrade-Insecure-Requests': '1',
+					'Cache-Control': 'no-cache',
+					Pragma: 'no-cache'
 				},
-				timeout: 10000,
-				maxRedirects: 5
+				timeout: 15000,
+				maxRedirects: 5,
+				validateStatus: (status) => status < 500 // Accept 4xx responses to see what's happening
 			});
+
+			console.log(`[DuckDuckGo HTML] Response status: ${response.status}`);
+
+			if (response.status === 403) {
+				console.warn('[DuckDuckGo HTML] Got 403 Forbidden - likely IP blocked or rate limited');
+				continue;
+			}
+
+			if (response.status === 429) {
+				console.warn('[DuckDuckGo HTML] Got 429 Too Many Requests - rate limited');
+				const retryAfter = response.headers['retry-after'];
+				if (retryAfter) {
+					const waitTime = parseInt(retryAfter) * 1000;
+					console.log(`Waiting ${waitTime}ms as requested by server...`);
+					await new Promise((resolve) => setTimeout(resolve, waitTime));
+				}
+				continue;
+			}
+
+			if (response.status !== 200) {
+				console.warn(`[DuckDuckGo HTML] Unexpected status ${response.status}`);
+				continue;
+			}
 
 			const $ = cheerio.load(response.data);
 			const results: SearchResult[] = [];
@@ -105,12 +139,15 @@ async function searchWithHtmlEndpoint(
 				}
 			});
 
+			console.log(`[DuckDuckGo HTML] Found ${results.length} results`);
+
 			if (results.length > 0) {
 				return results;
 			}
 
-			// If no results found, try the lite version
+			// If no results found on last attempt, try the lite version
 			if (attempt === 2) {
+				console.log('[DuckDuckGo HTML] Trying lite version as final attempt...');
 				const liteUrl = `https://duckduckgo.com/lite/?q=${encodeURIComponent(query)}&kl=${region}`;
 				const liteResponse = await axios.get(liteUrl, {
 					headers: {
@@ -141,15 +178,24 @@ async function searchWithHtmlEndpoint(
 					});
 				});
 
+				console.log(`[DuckDuckGo Lite] Found ${liteResults.length} results`);
 				return liteResults;
 			}
 		} catch (error: any) {
-			console.warn(`HTML search attempt ${attempt + 1} failed:`, error.message);
+			console.error(`[DuckDuckGo HTML] Attempt ${attempt + 1} error:`, {
+				message: error.message,
+				code: error.code,
+				status: error.response?.status
+			});
+
 			// Wait before retry
-			await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+			if (attempt < 2) {
+				await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
+			}
 		}
 	}
 
+	console.warn('[DuckDuckGo HTML] All attempts failed');
 	return [];
 }
 
@@ -175,24 +221,44 @@ async function searchWithInstantAnswerAPI(
 		const data = response.data;
 		const results: SearchResult[] = [];
 
-		// Parse instant answer results
-		if (data.Answer) {
+		// Parse instant answer (Abstract)
+		if (data.Abstract && data.Abstract.trim()) {
 			results.push({
-				title: 'Instant Answer',
-				url: `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
-				snippet: data.Answer,
-				position: 1
+				title: data.Heading || 'Instant Answer',
+				url: data.AbstractURL || `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
+				snippet: data.Abstract,
+				position: results.length + 1
 			});
 		}
 
-		// Parse related topics
+		// Parse direct results
+		if (data.Results && Array.isArray(data.Results)) {
+			for (const result of data.Results.slice(0, limit - results.length)) {
+				if (result.FirstURL && result.Text) {
+					// Clean HTML from text
+					const cleanText = result.Text.replace(/<[^>]*>/g, '').trim();
+					results.push({
+						title: cleanText.split(' - ')[0] || 'Search Result',
+						url: result.FirstURL,
+						snippet: cleanText,
+						position: results.length + 1
+					});
+				}
+			}
+		}
+
+		// Parse related topics (with HTML cleaning)
 		if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
 			for (const topic of data.RelatedTopics.slice(0, limit - results.length)) {
 				if (topic.Text && topic.FirstURL) {
+					// Clean HTML from text and extract meaningful content
+					const cleanText = topic.Text.replace(/<[^>]*>/g, '').trim();
+					const title = cleanText.split(' - ')[0] || 'Related Topic';
+
 					results.push({
-						title: topic.Text.split(' - ')[0] || 'Related Topic',
+						title,
 						url: topic.FirstURL,
-						snippet: topic.Text,
+						snippet: cleanText,
 						position: results.length + 1
 					});
 				}

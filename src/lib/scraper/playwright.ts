@@ -1,5 +1,6 @@
 /**
  * Playwright-based dynamic content scraper
+ * Uses @sparticuz/chromium for serverless environments (Vercel, AWS Lambda)
  */
 
 import { chromium, type Browser, type Page } from 'playwright';
@@ -21,13 +22,43 @@ let browserInstance: Browser | null = null;
 
 /**
  * Get or create a shared browser instance
+ * Uses @sparticuz/chromium in production/serverless environments
  */
 async function getBrowser(): Promise<Browser> {
 	if (!browserInstance || !browserInstance.isConnected()) {
-		browserInstance = await chromium.launch({
-			headless: true,
-			args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-		});
+		const isProduction = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+		if (isProduction) {
+			// Use @sparticuz/chromium for serverless environments
+			try {
+				const chromiumPkg = await import('@sparticuz/chromium');
+
+				browserInstance = await chromium.launch({
+					headless: true,
+					executablePath: await chromiumPkg.default.executablePath(),
+					args: chromiumPkg.default.args,
+					ignoreDefaultArgs: ['--disable-extensions']
+				});
+
+				console.log('✓ Launched browser with @sparticuz/chromium');
+			} catch (error: any) {
+				console.error('Failed to launch with @sparticuz/chromium:', error.message);
+				throw new ScrapingError('', 'Failed to initialize browser in serverless environment');
+			}
+		} else {
+			// Use regular Playwright in development
+			browserInstance = await chromium.launch({
+				headless: true,
+				args: [
+					'--no-sandbox',
+					'--disable-setuid-sandbox',
+					'--disable-dev-shm-usage',
+					'--disable-gpu'
+				]
+			});
+
+			console.log('✓ Launched browser with standard Playwright');
+		}
 	}
 	return browserInstance;
 }

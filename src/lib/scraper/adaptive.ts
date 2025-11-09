@@ -21,6 +21,7 @@ export type AdaptiveScrapeResult = ScrapeResult & { screenshot?: string };
 
 /**
  * Intelligently scrape a URL using the best method
+ * Priority: Cheerio (fast, static content) → Playwright (dynamic content)
  */
 export async function scrapeWithAdaptive(
 	url: string,
@@ -46,12 +47,16 @@ export async function scrapeWithAdaptive(
 	const cachedMethod = getCachedMethod(domain);
 	if (cachedMethod === 'playwright') {
 		console.log(`Using cached method (Playwright) for ${domain}`);
-		const result = await scrapeWithPlaywright(url, options);
-		cacheMethod(domain, 'playwright');
-		return result;
+		try {
+			const result = await scrapeWithPlaywright(url, options);
+			cacheMethod(domain, 'playwright');
+			return result;
+		} catch (error: any) {
+			console.log(`✗ Cached Playwright failed: ${error.message}, trying Cheerio`);
+		}
 	}
 
-	// Try Cheerio first (fast)
+	// Try Cheerio first (fast, works everywhere)
 	console.log(`Trying Cheerio for ${url}...`);
 	try {
 		const cheerioResult = await scrapeWithCheerio(url, options as CheerioScraperOptions);
@@ -70,7 +75,7 @@ export async function scrapeWithAdaptive(
 		console.log(`✗ Cheerio failed: ${error.message}`);
 	}
 
-	// Fallback to Playwright
+	// Fallback to Playwright (works with @sparticuz/chromium in production)
 	console.log(`Falling back to Playwright for ${url}...`);
 	const playwrightResult = await scrapeWithPlaywright(url, options);
 	cacheMethod(domain, 'playwright');
