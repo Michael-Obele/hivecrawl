@@ -29,7 +29,7 @@
 
 	// Debug helpers (will log after spec is loaded)
 
-	onMount(async () => {
+	async function initializeSwaggerUI() {
 		if (!containerElement) {
 			console.error('Container element not found!');
 			return;
@@ -74,6 +74,10 @@
 		} catch (error) {
 			console.error('Failed to initialize Swagger UI:', error);
 		}
+	}
+
+	onMount(() => {
+		initializeSwaggerUI();
 	});
 </script>
 
